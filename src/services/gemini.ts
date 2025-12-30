@@ -2,29 +2,29 @@ import { ai } from "../config/gemini.js";
 import type { GeminiQuery } from "../types/geminiQuery.js";
 
 const SYSTEM_INSTRUCTIONS = {
-    // We update the NOTIFICATION prompt to be "Hybrid"
     NOTIFICATION: `
+        ## Continuity Ledger
+        Maintain a brief internal 'ledger' of the user's current goal to survive context gaps.
+        - At the start of every turn, recall the user's primary intent from the history.
+        - Ensure all advice remains strictly private and local-first.
+
+        ### Job Description
         You are the Privacy Agent. You have two jobs:
         1. Politely Answer any general questions the user asks.
-        2. If (and only if) the user wants to set a reminder/notification, here it is a tool notification with details needed: "time" (HH:mm), "topic", "frequency", and "message".
+        2. If the user wants to set a reminder/notification, you must collect: "time" (HH:mm), "topic", "frequency", and "message".
 
-        **STRICT OUTPUT FORMAT:**
-        You must ALWAYS respond in JSON:
+        ### STRICT OUTPUT FORMAT (JSON ONLY)
         {
-          "reply": "Your answer to their question OR your request for notification details",
-          "notification": null | { "time": "string", "topic": "string", "frequency": "DAILY"|"ONCE", "message": "string" }
+          "status_check": "1-sentence summary of the current goal",
+          "reply": "Your answer to their question",
+          "notification": null | { "time": "string", "topic": "string", "frequency": "DAILY"|"ONCE", "message": "string" },
+          "privacy_ledger": "Confirmation that data is processed locally/anonymously"
         }
 
         **LOGIC:**
-        - If the user asks a general question (e.g., about the app creator), respond in "reply" and set "notification" to null.
-        - If the user asks to set a reminder but does NOT provide all required details, ask for the missing details in "reply" and set "notification" to null.
-        - If the user clearly provides ALL required details, confirm briefly in "reply" and populate the "notification" object.
-        - NEVER assume or invent missing details.
-        - NEVER create a notification unless the user explicitly wants one.
-
-        FINAL CONSTRAINT:
-        - Every response MUST be exactly one valid JSON object matching the schema above.
-        - Any output outside this format is considered invalid.
+        - If details are missing for a reminder, ask for them in "reply".
+        - populate "notification" ONLY when ALL details are present.
+        - Every response MUST be valid JSON. No prose outside the JSON.
     `
 };
 
@@ -35,8 +35,8 @@ export async function generateContent({ query, history, localTime, model }: Gemi
             config: {
                 systemInstruction: `${SYSTEM_INSTRUCTIONS.NOTIFICATION}
                 IMPORTANT CONTEXT:
-                ${localTime}
-                Use this to calculate relative times (e.g., 'in 1 hour' or 'tomorrow').`,
+                Current Local Time: ${localTime}
+                Focus ONLY on the current query while respecting the Continuity Ledger.`,
                 responseMimeType: 'application/json'
             },
             history: history.map((msg) => ({
@@ -48,7 +48,12 @@ export async function generateContent({ query, history, localTime, model }: Gemi
             message: query
         });
         try {
-            return JSON.parse(res.text || '{ reply: null, notification: null }');
+            const parsed = JSON.parse(res.text || '{reply: null, notification: null, status: AI is warmed UP!}');
+            return {
+                reply: parsed.reply,
+                notification: parsed.notification,
+                status: parsed.status_check // You can use this for a "Status" pill in your UI
+            };
         } catch (e) {
             // Fallback if LLM returns non-JSON text
             return { reply: res.text, notification: null };

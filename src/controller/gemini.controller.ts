@@ -11,8 +11,8 @@ export const callLLM = asyncHandler(async (req: Request, res: Response) => {
         throw new ApiError(400, "Query and History is required");
     }
 
-    const limitedHistory = history.length > 6 ? history.slice(-6) : history;
-    console.log("History:", limitedHistory);
+    const limitedHistory = history.length > 50 ? history.slice(-50) : history;
+    // console.log("History:", limitedHistory);
     const text = await generateContent({ query, history: limitedHistory, localTime, model })
 
     if(!text) {
