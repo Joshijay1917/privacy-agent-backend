@@ -19,9 +19,9 @@ export const chatLimiter = rateLimit({
         sendCommand: (...args) => redisClient.sendCommand(args),
     }),
     keyGenerator: (req) => {
-        const anonId = req.headers['x-anonymous-id'] || 'no-id';
-        const ip = req.ip || 'no-ip';
-        return `${anonId}-${ip}`;
+        const anonId = req.headers['x-anonymous-id'] || req.ip || 'no-id';
+        // const ip = req.ip || 'no-ip';
+        return `${anonId}`;
     },
     handler: (req, res) => {
         res.status(429).json({
