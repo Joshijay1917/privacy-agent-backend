@@ -38,7 +38,7 @@ export async function generateContent({ query, history, localTime, model }: Gemi
                 IMPORTANT CONTEXT:
                 Current Local Time: ${localTime}
                 Focus ONLY on the current query while respecting the Continuity Ledger.`}),
-                responseMimeType: 'application/json'
+                ...( !isGemma && { responseMimeType: 'application/json' }),
             },
             history: history.map((msg, index) => {
                 let content = msg.content;
@@ -54,15 +54,20 @@ export async function generateContent({ query, history, localTime, model }: Gemi
         const res = await chat.sendMessage({
             message: query
         });
+
+        const rawText = res.text;
+        const jsonMatch = rawText?.match(/\{(?:[^{}]|(\{(?:[^{}]|(\{[^{}]*\})) *\}))*\}/); // Extracts the first { ... } block found
+        const cleanText = jsonMatch ? jsonMatch[0] : rawText;
+
         try {
-            const parsed = JSON.parse(res.text || '{reply: null, notification: null, status: AI is warmed UP!}');
+            const parsed = JSON.parse(cleanText || '{reply: null, notification: null, status: AI is warmed UP!}');
             return {
                 reply: parsed.reply,
                 notification: parsed.notification,
                 status: parsed.status_check
             };
         } catch (e) {
-            return { reply: res.text, notification: null };
+            return { reply: res.text, notification: null, status: "Online (Standard Mode)" };
         }
     } catch (error) {
         console.error("Failed to call LLM!!", error)
