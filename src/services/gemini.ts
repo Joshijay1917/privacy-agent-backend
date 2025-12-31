@@ -29,20 +29,27 @@ const SYSTEM_INSTRUCTIONS = {
 };
 
 export async function generateContent({ query, history, localTime, model }: GeminiQuery) {
+    const isGemma = model.includes('gemma');
     try {
         const chat = ai.chats.create({
             model: model,
             config: {
-                systemInstruction: `${SYSTEM_INSTRUCTIONS.NOTIFICATION}
+                ...(!isGemma && {systemInstruction: `${SYSTEM_INSTRUCTIONS.NOTIFICATION}
                 IMPORTANT CONTEXT:
                 Current Local Time: ${localTime}
-                Focus ONLY on the current query while respecting the Continuity Ledger.`,
+                Focus ONLY on the current query while respecting the Continuity Ledger.`}),
                 responseMimeType: 'application/json'
             },
-            history: history.map((msg) => ({
-                role: msg.role,
-                parts: [{ text: msg.content }]
-            }))
+            history: history.map((msg, index) => {
+                let content = msg.content;
+                if (isGemma && index === 0) {
+                    content = `INSTRUCTIONS:\n${SYSTEM_INSTRUCTIONS.NOTIFICATION}\nLocal Time: ${localTime}\n\nUSER MESSAGE:\n${msg.content}`;
+                }
+                return {
+                    role: msg.role,
+                    parts: [{ text: msg.content }]
+                }
+            })
         })
         const res = await chat.sendMessage({
             message: query
