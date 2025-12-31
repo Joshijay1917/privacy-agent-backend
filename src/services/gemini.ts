@@ -16,7 +16,7 @@ const SYSTEM_INSTRUCTIONS = {
         ### STRICT OUTPUT FORMAT (JSON ONLY)
         {
           "status_check": "1-sentence summary of the current goal",
-          "reply": "Your answer to their question",
+          "reply": "Your answer to their question in markdown",
           "notification": null | { "time": "string", "topic": "string", "frequency": "DAILY"|"ONCE", "message": "string" },
           "privacy_ledger": "Confirmation that data is processed locally/anonymously"
         }
@@ -52,10 +52,9 @@ export async function generateContent({ query, history, localTime, model }: Gemi
             return {
                 reply: parsed.reply,
                 notification: parsed.notification,
-                status: parsed.status_check // You can use this for a "Status" pill in your UI
+                status: parsed.status_check
             };
         } catch (e) {
-            // Fallback if LLM returns non-JSON text
             return { reply: res.text, notification: null };
         }
     } catch (error) {

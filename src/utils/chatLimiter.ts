@@ -12,16 +12,13 @@ export const chatLimiter = rateLimit({
     limit: 20,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
+    requestWasSuccessful: (req, res) => res.statusCode < 400,
+    skipFailedRequests: true,
     validate: false,
     store: new RedisStore({
         sendCommand: (...args) => redisClient.sendCommand(args),
     }),
-    // keyGenerator: (req) => {
-    //     const anonId = req.headers['x-anonymous-id'] || 'no-id';
-    //     return `${anonId}-${req.ip}`;
-    // },
     keyGenerator: (req) => {
-        // Custom key using your anonymous ID and the request IP
         const anonId = req.headers['x-anonymous-id'] || 'no-id';
         const ip = req.ip || 'no-ip';
         return `${anonId}-${ip}`;
