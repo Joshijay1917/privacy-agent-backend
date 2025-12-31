@@ -57,7 +57,7 @@ export async function generateContent({ query, history, localTime, model }: Gemi
 
         const rawText = res.text;
         const jsonMatch = rawText?.match(/\{(?:[^{}]|(\{(?:[^{}]|(\{[^{}]*\})) *\}))*\}/); // Extracts the first { ... } block found
-        const cleanText = jsonMatch ? jsonMatch[0] : rawText;
+        const cleanText = !isGemma && jsonMatch ? jsonMatch[0] : rawText;
 
         try {
             const parsed = JSON.parse(cleanText || '{reply: null, notification: null, status: AI is warmed UP!}');

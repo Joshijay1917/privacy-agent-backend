@@ -1,6 +1,5 @@
 import { app } from "./app.js";
 import { connectToDB } from "./config/db.js";
-import { RedisClient } from "./services/redis.js";
 
 const PORT = process.env.PORT || 3000;
 
