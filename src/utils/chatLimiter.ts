@@ -9,7 +9,9 @@ redisClient.connect().catch(console.error);
 
 export const chatLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000,
-    limit: 20,
+    limit: (req) => {
+        return req.body?.model === 'gemma-3-27b-it' ? 40 : 20;
+    },
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     requestWasSuccessful: (req, res) => res.statusCode < 400,
