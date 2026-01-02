@@ -1,8 +1,13 @@
 import { type Request, type Response, type NextFunction } from 'express';
+import type { UserDocument } from '../model/user.model.js';
+
+export interface CustomRequest extends Request {
+    user?: UserDocument; // This ensures req.user has all your methods like generateAccessToken()
+}
 
 // Define the shape of an async controller function
 type AsyncController = (
-    req: Request<any, any, any, any>,
+    req: CustomRequest,
     res: Response,
     next: NextFunction
 ) => Promise<any>;
@@ -12,7 +17,7 @@ type AsyncController = (
  * Explicitly returns 'void' to satisfy Express's Type definitions.
  */
 export const asyncHandler = (fn: AsyncController) => {
-    return (req: Request, res: Response, next: NextFunction): void => {
+    return (req: CustomRequest, res: Response, next: NextFunction): void => {
         Promise.resolve(fn(req, res, next)).catch(next);
     };
 };

@@ -47,7 +47,7 @@ export async function generateContent({ query, history, localTime, model }: Gemi
                 }
                 return {
                     role: msg.role,
-                    parts: [{ text: msg.content }]
+                    parts: [{ text: content }]
                 }
             })
         })
@@ -56,9 +56,10 @@ export async function generateContent({ query, history, localTime, model }: Gemi
         });
 
         const rawText = res.text;
-        const jsonMatch = rawText?.match(/\{(?:[^{}]|(\{(?:[^{}]|(\{[^{}]*\})) *\}))*\}/); // Extracts the first { ... } block found
-        const cleanText = !isGemma && jsonMatch ? jsonMatch[0] : rawText;
-
+        const jsonMatch = rawText?.match(/\{[\s\S]*\}/); // Extracts the first { ... } block found
+        const cleanText = isGemma && jsonMatch ? jsonMatch[0] : rawText;
+        console.log("text:", rawText);
+        
         try {
             const parsed = JSON.parse(cleanText || '{reply: null, notification: null, status: AI is warmed UP!}');
             return {
